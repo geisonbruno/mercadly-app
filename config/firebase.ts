@@ -2,7 +2,7 @@ import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDPuMPU4REE7lkoT46qI0zAUj5yUpivLvk",
+  apiKey: process.env.GOOGLE_API_KEY,
   authDomain: "mercadly-app.firebaseapp.com",
   projectId: "mercadly-app",
   storageBucket: "mercadly-app.firebasestorage.app",
