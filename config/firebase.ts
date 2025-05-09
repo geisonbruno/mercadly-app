@@ -1,8 +1,9 @@
-import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.GOOGLE_API_KEY,
+  apiKey: "AIzaSyDPuMPU4REE7lkoT46qI0zAUj5yUpivLvk",
   authDomain: "mercadly-app.firebaseapp.com",
   projectId: "mercadly-app",
   storageBucket: "mercadly-app.firebasestorage.app",
@@ -12,4 +13,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
