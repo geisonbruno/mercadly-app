@@ -11,7 +11,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      router.replace("/list"); // redireciona após cadastro
+      router.replace("/list/index"); // redireciona após cadastro
     } catch (error: any) {
       Alert.alert("Erro ao cadastrar", error.message);
     }

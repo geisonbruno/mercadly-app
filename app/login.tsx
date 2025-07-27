@@ -11,7 +11,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/list"); // redireciona para tela da lista
+      router.replace("/list/index"); // redireciona para tela da lista
     } catch (error: any) {
       Alert.alert("Erro ao entrar", error.message);
     }

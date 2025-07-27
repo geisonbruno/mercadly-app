@@ -9,7 +9,7 @@ export default function Index() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.replace("/list");
+        router.replace("/list/index");
       } else {
         router.replace("/login");
       }
