@@ -1,50 +1,95 @@
-# Welcome to your Expo app 👋
+# Mercadly - Lista de Compras Compartilhada
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+&#x20;&#x20;
 
-## Get started
+## 📚 Sobre o Projeto
 
-1. Install dependencies
+Mercadly é um aplicativo mobile multiplataforma (iOS/Web/Android) desenvolvido com React Native (Expo) e Firebase. Ele permite que uma família ou grupo compartilhe uma única lista de compras com atualização em tempo real. Todos os participantes acessam a mesma conta (login compartilhado) e podem visualizar, adicionar, editar ou remover itens simultaneamente.
 
-   ```bash
-   npm install
-   ```
+Ideal para compras colaborativas entre familiares ou colegas de casa.
 
-2. Start the app
+## 📖 Tabela de Conteúdo
 
-   ```bash
-   npx expo start
-   ```
+- [Instalação](#instalação)
+- [Como Usar](#como-usar)
+- [Funcionalidades](#funcionalidades)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Próximos Passos](#próximos-passos)
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## ⚙️ Instalação
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Clone o repositório:
 
 ```bash
-npm run reset-project
+git clone https://github.com/seu-usuario/mercadly-app.git
+cd mercadly-app
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Instale as dependências:
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Configure o Firebase:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Crie um projeto no [Firebase Console](https://console.firebase.google.com)
+- Ative Authentication (Email/Senha)
+- Ative Firestore Database
+- Pegue as credenciais Web e configure no arquivo `config/firebase.ts`
 
-## Join the community
+4. Inicie a aplicação:
 
-Join our community of developers creating universal apps.
+```bash
+npx expo start --web
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Você pode também rodar no celular usando o app [Expo Go](https://expo.dev/client).
+
+---
+
+## 🚀 Como Usar
+
+1. Acesse `/register` para criar a conta compartilhada
+2. Compartilhe email/senha com o grupo
+3. Acesse `/login` e entre com a mesma conta em vários dispositivos
+4. Acesse `/list` para visualizar e manipular os itens da lista
+
+---
+
+## ✨ Funcionalidades
+
+- Login e cadastro com Firebase Authentication
+- Lista de compras em tempo real com Firestore
+- Adição de novos itens (nome + quantidade)
+- Edição e remoção de itens
+- Logout
+- Proteção de rotas: apenas usuários logados acessam a lista
+- Layout mobile-friendly com `expo-router`
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- [React Native](https://reactnative.dev/)
+- [Expo](https://expo.dev/)
+- [Firebase Authentication](https://firebase.google.com/products/auth)
+- [Firebase Firestore](https://firebase.google.com/products/firestore)
+- [expo-router](https://expo.github.io/router)
+- TypeScript
+
+---
+
+## 🔗 Próximos Passos
+
+- Adicionar múltiplas listas (ex: lista da casa, lista da empresa)
+- Compartilhamento via link de convite
+- Modo offline/cache
+- Notificações push
+- Tema escuro/tema claro
+
+---
+
+> Desenvolvido com ❤️ para facilitar compras em grupo de forma prática e sincronizada.
