@@ -1,65 +1,150 @@
-import { router } from "expo-router";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useState } from "react";
-import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { auth } from "../config/firebase";
+import { router } from 'expo-router';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useState } from 'react';
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { auth } from '../config/firebase';
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
+    if (!username || !email || !password) {
+      return Alert.alert('Erro', 'Preencha todos os campos.');
+    }
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.replace("/list"); // redireciona após cadastro
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: username });
+      router.replace('/list');
     } catch (error: any) {
-      Alert.alert("Erro ao cadastrar", error.message);
+      Alert.alert('Erro ao cadastrar', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Criar conta</Text>
+      {/* Logo */}
+      <Text style={styles.logo}>🥕</Text>
 
+      {/* Título */}
+      <Text style={styles.title}>Sign Up</Text>
+      <Text style={styles.subtitle}>Enter your credentials to continue</Text>
+
+      {/* Nome */}
+      <TextInput
+        style={styles.input}
+        placeholder="Username"
+        placeholderTextColor="#aaa"
+        value={username}
+        onChangeText={setUsername}
+      />
+
+      {/* Email */}
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#aaa"
         autoCapitalize="none"
-        onChangeText={setEmail}
         value={email}
+        onChangeText={setEmail}
       />
 
+      {/* Senha */}
       <TextInput
         style={styles.input}
-        placeholder="Senha"
+        placeholder="Password"
+        placeholderTextColor="#aaa"
         secureTextEntry
-        onChangeText={setPassword}
         value={password}
+        onChangeText={setPassword}
       />
 
-      <Button title="Cadastrar" onPress={handleRegister} />
+      {/* Política */}
+      <Text style={styles.policyText}>
+        By continuing you agree to our{' '}
+        <Text style={styles.linkText}>Terms of Service</Text> and{' '}
+        <Text style={styles.linkText}>Privacy Policy</Text>.
+      </Text>
 
-      <Text style={styles.link} onPress={() => router.replace("/login")}>
-        Já tem conta? Fazer login
+      {/* Botão de cadastro */}
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Create Account</Text>
+      </TouchableOpacity>
+
+      {/* Link para login */}
+      <Text style={styles.footerText}>
+        Already have an account?{' '}
+        <Text style={styles.linkText} onPress={() => router.replace('/login')}>
+          Login
+        </Text>
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+  },
+  logo: {
+    fontSize: 48,
+    alignSelf: 'center',
+    marginBottom: 32,
+  },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 24,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+    paddingVertical: 12,
+    fontSize: 16,
+    marginBottom: 20,
   },
-  link: { marginTop: 20, color: "blue", textAlign: "center" },
+  policyText: {
+    fontSize: 12,
+    color: '#777',
+    marginBottom: 20,
+  },
+  linkText: {
+    color: '#2E8B57',
+    fontWeight: '500',
+  },
+  button: {
+    backgroundColor: '#2E8B57',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footerText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#333',
+  },
 });
