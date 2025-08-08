@@ -35,8 +35,9 @@ export default function ShoppingListScreen() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'shoppingLists', 'main', 'items'), orderBy('updatedAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const itemsQuery  = query(collection(db, 'shoppingLists', 'main', 'items'), orderBy('updatedAt', 'desc'));
+
+    const unsubscribe = onSnapshot(itemsQuery , (snapshot) => {
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -88,7 +89,6 @@ export default function ShoppingListScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Lista de Compras</Text>
-        <Button title="Sair" onPress={handleLogout} />
       </View>
 
       {name && (
