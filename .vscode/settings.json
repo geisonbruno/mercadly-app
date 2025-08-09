@@ -3,5 +3,8 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "commentTranslate.source": "Google",
+  "commentTranslate.targetLanguage": "pt",
+  "commentTranslate.browse.mode": "contrast"
 }
