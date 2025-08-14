@@ -1,4 +1,4 @@
-// app/login.tsx
+import { auth } from "@/config/firebase";
 import { router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { auth } from '../config/firebase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
