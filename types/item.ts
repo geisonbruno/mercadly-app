@@ -1,6 +1,8 @@
-export interface ShoppingItem {
+export type ShoppingItem = {
   id: string;
   name: string;
   quantity: string;
-  updatedAt: string;
-}
+  subtitle?: string;
+  imageUrl?: string | null;
+  updatedAt: any; 
+};
