@@ -1,176 +1,199 @@
-// app/list/index.tsx
-import { router } from 'expo-router';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+
+import { ShoppingItem } from "@/types/item";
+import { AntDesign, Feather } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Button,
+  Alert,
   FlatList,
+  Image,
+  Modal,
+  Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
-} from 'react-native';
-import { db } from '../../config/firebase';
-import { useAuth } from '../../hooks/useAuth';
-import { ShoppingListService } from '../../services/shoppingListService';
-import { ShoppingItem } from '../../types/item';
+} from "react-native";
+import { ShoppingListService } from "../../services/shoppingListService";
 
-export default function ShoppingListScreen() {
-  const { user, logout, loading } = useAuth();
-  const name = user?.displayName;
-
+export default function ListScreen() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [nameInput, setNameInput] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login');
-    }
-  }, [user, loading]);
+  const [editing, setEditing] = useState<ShoppingItem | null>(null);
+  const [qty, setQty] = useState("");
 
-  useEffect(() => {
-    if (!user) return;
-
-    const itemsQuery  = query(collection(db, 'shoppingLists', 'main', 'items'), orderBy('updatedAt', 'desc'));
-
-    const unsubscribe = onSnapshot(itemsQuery , (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as ShoppingItem));
+  const load = async () => {
+    try {
+      setLoading(true);
+      const data = await ShoppingListService.getAll();
       setItems(data);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  const handleAddOrUpdate = async () => {
-    if (!nameInput.trim() || !quantity.trim()) return;
-
-    if (editingId) {
-      await ShoppingListService.update(editingId, { name: nameInput, quantity });
-      setEditingId(null);
-    } else {
-      await ShoppingListService.add(nameInput, quantity);
+    } finally {
+      setLoading(false);
     }
-
-    setNameInput('');
-    setQuantity('');
   };
 
-  const handleEdit = (item: ShoppingItem) => {
-    setEditingId(item.id);
-    setNameInput(item.name);
-    setQuantity(item.quantity);
+  useEffect(() => {
+    load();
+  }, []);
+
+  // recarrega ao voltar para a aba
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [])
+  );
+
+  const openEdit = (it: ShoppingItem) => {
+    setEditing(it);
+    setQty(it.quantity ?? "1");
   };
 
-  const handleDelete = async (id: string) => {
-    await ShoppingListService.remove(id);
+  const saveEdit = async () => {
+    if (!editing) return;
+    try {
+      await ShoppingListService.update(editing.id, { quantity: qty });
+      setEditing(null);
+      load();
+    } catch (e) {
+      console.error("Erro ao editar item:", e);
+    }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/login');
+  const removeItem = (id: string) => {
+    Alert.alert("Remover", "Deseja remover este item?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Remover",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await ShoppingListService.remove(id);
+            load();
+          } catch (e) {
+            console.error("Erro ao remover:", e);
+          }
+        },
+      },
+    ]);
   };
 
-  if (loading || !user) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#000" />
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Lista de Compras</Text>
-      </View>
-
-      {name && (
-        <Text style={styles.welcomeText}>👋 Seja bem-vindo, {name}!</Text>
+  const renderItem = ({ item }: { item: ShoppingItem }) => (
+    <View style={styles.card}>
+      {/* Imagem/placeholder (só aparecerá se você passar imageUrl no service futuramente) */}
+      {item.imageUrl ? (
+        <Image source={{ uri: item.imageUrl }} style={styles.img} />
+      ) : (
+        <View style={[styles.img, styles.imgPlaceholder]}>
+          <Feather name="image" size={18} color="#9CA3AF" />
+        </View>
       )}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nome do item"
-        value={nameInput}
-        onChangeText={setNameInput}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Quantidade"
-        value={quantity}
-        onChangeText={setQuantity}
-      />
-      <Button
-        title={editingId ? 'Atualizar item' : 'Adicionar item'}
-        onPress={handleAddOrUpdate}
-      />
+      <View style={styles.centerCell}>
+        <Text numberOfLines={1} style={styles.title}>
+          {item.name}
+        </Text>
+        {!!item.subtitle && (
+          <Text numberOfLines={1} style={styles.sub}>
+            {item.subtitle}
+          </Text>
+        )}
+      </View>
+
+      <Text style={styles.qty}>{item.quantity}</Text>
+
+      <Pressable onPress={() => removeItem(item.id)} style={styles.iconBtn}>
+        <AntDesign name="close" size={18} color="#6b7280" />
+      </Pressable>
+
+      <Pressable onPress={() => openEdit(item)} style={styles.iconBtn}>
+        <Feather name="edit-2" size={18} color="#6b7280" />
+      </Pressable>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.headerWrap}>
+        <Text style={styles.header}>My List</Text>
+      </View>
 
       <FlatList
         data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.cardText}>{item.name} — {item.quantity}</Text>
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={() => handleEdit(item)}>
-                <Text style={styles.actionText}>✏️</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                <Text style={styles.actionText}>🗑️</Text>
-              </TouchableOpacity>
+        keyExtractor={(it) => it.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        ItemSeparatorComponent={() => <View style={styles.sep} />}
+        ListEmptyComponent={
+          !loading ? <Text style={styles.empty}>Sua lista está vazia.</Text> : null
+        }
+      />
+
+      {/* Modal editar quantidade */}
+      <Modal visible={!!editing} transparent animationType="fade">
+        <View style={styles.backdrop}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Editar quantidade</Text>
+            <TextInput
+              value={qty}
+              onChangeText={setQty}
+              placeholder="Quantidade"
+              style={styles.input}
+            />
+            <View style={styles.row}>
+              <Pressable style={[styles.btn, styles.btnGhost]} onPress={() => setEditing(null)}>
+                <Text style={styles.btnGhostText}>Cancelar</Text>
+              </Pressable>
+              <Pressable style={[styles.btn, styles.btnPrimary]} onPress={saveEdit}>
+                <Text style={styles.btnPrimaryText}>Salvar</Text>
+              </Pressable>
             </View>
           </View>
-        )}
-        style={{ marginTop: 20 }}
-      />
-    </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  welcomeText: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  input: {
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 16,
-  },
+  safe: { flex: 1, backgroundColor: "#fff" },
+  headerWrap: { paddingTop: 8, paddingBottom: 6, alignItems: "center" },
+  header: { fontSize: 18, fontWeight: "700" },
+
   card: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
   },
-  cardText: {
-    fontSize: 16,
-    fontWeight: '500',
+  img: { width: 52, height: 52, borderRadius: 12 },
+  imgPlaceholder: {
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
+  centerCell: { flex: 1 },
+  title: { fontSize: 15, fontWeight: "700" },
+  sub: { color: "#6b7280", marginTop: 2 },
+  qty: { marginRight: 8, fontWeight: "700", color: "#111827" },
+  iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  sep: { height: 1, backgroundColor: "#E5E7EB", marginHorizontal: 16 },
+
+  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
+  modal: { backgroundColor: "#fff", width: "86%", borderRadius: 12, padding: 16 },
+  modalTitle: { fontWeight: "700", fontSize: 16, marginBottom: 8 },
+  input: {
+    borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#F9FAFB"
   },
-  actionText: {
-    fontSize: 18,
-    marginLeft: 10,
-  },
+  row: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 12 },
+  btn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
+  btnGhost: { backgroundColor: "#F3F4F6" },
+  btnGhostText: { color: "#111827" },
+  btnPrimary: { backgroundColor: "#111827" },
+  btnPrimaryText: { color: "#fff", fontWeight: "700" },
+
+    empty: { textAlign: "center", color: "#6b7280", marginTop: 24 },
 });

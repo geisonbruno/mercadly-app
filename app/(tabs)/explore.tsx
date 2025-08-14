@@ -1,14 +1,14 @@
-// app/(tabs)/explore.tsx
-import { useEffect, useState } from "react";
+import { AntDesign, Feather } from "@expo/vector-icons";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
+  Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
@@ -17,6 +17,7 @@ import { ShoppingListService } from "../../services/shoppingListService";
 
 export default function ExploreScreen() {
   const { user, loading } = useAuth();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [filtered, setFiltered] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
@@ -27,15 +28,13 @@ export default function ExploreScreen() {
 
     (async () => {
       try {
-        // garante que temos itens “de loja”
+        // mantém seus seeds e leitura atual
         await ProductsService.seedDefaultsOnce();
-
         const data = await ProductsService.list();
         setProducts(data);
         setFiltered(data);
-      } catch (e: any) {
+      } catch (e) {
         console.error(e);
-        Alert.alert("Erro", "Não foi possível carregar os produtos.");
       } finally {
         setBusy(false);
       }
@@ -45,109 +44,173 @@ export default function ExploreScreen() {
   useEffect(() => {
     const term = search.trim().toLowerCase();
     setFiltered(
-      term
-        ? products.filter((p) => p.name?.toLowerCase().includes(term))
-        : products
+      term ? products.filter(p => (p.name || "").toLowerCase().includes(term)) : products
     );
   }, [search, products]);
 
+  const countLabel = useMemo(() => {
+    if (busy) return "Carregando…";
+    const n = filtered.length;
+    return n === 0 ? "Nenhum produto encontrado." : `${n} produto${n > 1 ? "s" : ""}`;
+  }, [busy, filtered.length]);
+
   const addToMyList = async (p: Product) => {
     try {
+      // usa a assinatura atual do seu service (name, quantity)
       await ShoppingListService.add(p.name, "1");
-      Alert.alert("Adicionado", `"${p.name}" foi adicionado à sua lista.`);
-    } catch (e: any) {
-      console.error(e);
-      Alert.alert("Erro", "Não foi possível adicionar o item.");
+      // feedback visual rápido (pode trocar por Toast se quiser)
+    } catch (e) {
+      console.error("Falha ao adicionar:", e);
     }
   };
 
   if (loading || busy) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Buscar produtos..."
-        value={search}
-        onChangeText={setSearch}
-      />
+    <SafeAreaView style={styles.safe}>
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.searchBox}>
+          <Feather name="search" size={18} color="#6b7280" style={{ marginRight: 8 }} />
+          <TextInput
+            placeholder="Search products"
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+            style={styles.searchInput}
+          />
+        </View>
+        <Pressable style={styles.roundBtn} onPress={() => {}}>
+          <Feather name="sliders" size={18} color="#111827" />
+        </Pressable>
+      </View>
+
+      <Text style={styles.helperText}>{countLabel}</Text>
 
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id!}
-        contentContainerStyle={{ paddingVertical: 10 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image
-              source={{
-                uri:
-                  item.imageURL?.trim() ||
-                  "https://via.placeholder.com/120x120.png?text=Produto",
-              }}
-              style={styles.image}
-            />
-            <View style={styles.info}>
-              <Text style={styles.name}>{item.name}</Text>
-              {!!item.description && (
-                <Text style={styles.description}>{item.description}</Text>
-              )}
-              {!!item.category && (
-                <Text style={styles.category}>{item.category}</Text>
-              )}
+            {/* Imagem */}
+            {item.imageURL ? (
+              <Image source={{ uri: item.imageURL }} style={styles.img} />
+            ) : (
+              <View style={[styles.img, styles.imgPlaceholder]}>
+                <Feather name="image" size={20} color="#9CA3AF" />
+              </View>
+            )}
+
+            {/* Infos */}
+            <View style={styles.centerCell}>
+              <Text numberOfLines={1} style={styles.cardTitle}>
+                {item.name}
+              </Text>
+              {item.description ? (
+                <Text numberOfLines={1} style={styles.cardSub}>
+                  {item.description}
+                </Text>
+              ) : null}
+              {item.category ? (
+                <Text numberOfLines={1} style={styles.cardTag}>
+                  {item.category}
+                </Text>
+              ) : null}
             </View>
 
-            <TouchableOpacity style={styles.addBtn} onPress={() => addToMyList(item)}>
-              <Text style={styles.addTxt}>＋</Text>
-            </TouchableOpacity>
+            {/* Botão + */}
+            <Pressable onPress={() => addToMyList(item)} style={styles.addBtn}>
+              <AntDesign name="plus" size={20} color="#fff" />
+            </Pressable>
           </View>
         )}
-        ListEmptyComponent={
-          <Text style={{ textAlign: "center", marginTop: 24 }}>
-            Nenhum produto encontrado.
-          </Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>Nenhum produto encontrado.</Text>}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  input: {
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 20,
+  safe: { flex: 1, backgroundColor: "#F5F6F8" },
+
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
+  searchBox: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  searchInput: { flex: 1, fontSize: 15 },
+  roundBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  helperText: {
+    color: "#6b7280",
+    marginTop: 8,
+    marginBottom: 6,
+    marginHorizontal: 16,
+  },
+
   card: {
     flexDirection: "row",
-    backgroundColor: "#f9f9f9",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
     alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
     gap: 12,
   },
-  image: { width: 60, height: 60, borderRadius: 8, backgroundColor: "#eee" },
-  info: { flex: 1, gap: 2 },
-  name: { fontSize: 16, fontWeight: "700" },
-  description: { fontSize: 13, color: "#666" },
-  category: { fontSize: 12, color: "#2e7d32" },
-  addBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 50,
-    backgroundColor: "#34a853",
+  img: { width: 60, height: 60, borderRadius: 12 },
+  imgPlaceholder: {
+    backgroundColor: "#F3F4F6",
     alignItems: "center",
     justifyContent: "center",
   },
-  addTxt: { color: "#fff", fontSize: 22, lineHeight: 22 },
+  centerCell: { flex: 1 },
+  cardTitle: { fontSize: 16, fontWeight: "700" },
+  cardSub: { color: "#6b7280", marginTop: 2 },
+  cardTag: { color: "#059669", marginTop: 2, fontSize: 12, fontWeight: "600" },
+
+  addBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#22c55e",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  empty: { textAlign: "center", color: "#6b7280", marginTop: 24 },
 });
