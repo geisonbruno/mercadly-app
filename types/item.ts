@@ -4,5 +4,7 @@ export type ShoppingItem = {
   quantity: string;
   subtitle?: string;
   imageUrl?: string | null;
-  updatedAt: any; 
+  checked?: boolean;
+  updatedAt: any;
+  createdAt: any;
 };

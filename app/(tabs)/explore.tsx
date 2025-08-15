@@ -28,7 +28,6 @@ export default function ExploreScreen() {
 
     (async () => {
       try {
-        // mantém seus seeds e leitura atual
         await ProductsService.seedDefaultsOnce();
         const data = await ProductsService.list();
         setProducts(data);
@@ -44,21 +43,26 @@ export default function ExploreScreen() {
   useEffect(() => {
     const term = search.trim().toLowerCase();
     setFiltered(
-      term ? products.filter(p => (p.name || "").toLowerCase().includes(term)) : products
+      term
+        ? products.filter((p) => (p.name || "").toLowerCase().includes(term))
+        : products
     );
   }, [search, products]);
 
   const countLabel = useMemo(() => {
     if (busy) return "Carregando…";
     const n = filtered.length;
-    return n === 0 ? "Nenhum produto encontrado." : `${n} produto${n > 1 ? "s" : ""}`;
+    return n === 0
+      ? "Nenhum produto encontrado."
+      : `${n} produto${n > 1 ? "s" : ""}`;
   }, [busy, filtered.length]);
 
   const addToMyList = async (p: Product) => {
     try {
-      // usa a assinatura atual do seu service (name, quantity)
-      await ShoppingListService.add(p.name, "1");
-      // feedback visual rápido (pode trocar por Toast se quiser)
+      await ShoppingListService.add(p.name, "1", {
+        subtitle: p.description ?? "",
+        imageUrl: p.imageURL ?? null,
+      });
     } catch (e) {
       console.error("Falha ao adicionar:", e);
     }
@@ -79,7 +83,12 @@ export default function ExploreScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={styles.searchBox}>
-          <Feather name="search" size={18} color="#6b7280" style={{ marginRight: 8 }} />
+          <Feather
+            name="search"
+            size={18}
+            color="#6b7280"
+            style={{ marginRight: 8 }}
+          />
           <TextInput
             placeholder="Search products"
             value={search}
@@ -133,7 +142,9 @@ export default function ExploreScreen() {
             </Pressable>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Nenhum produto encontrado.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>Nenhum produto encontrado.</Text>
+        }
       />
     </SafeAreaView>
   );

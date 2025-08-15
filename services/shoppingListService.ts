@@ -15,12 +15,10 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-
 const LIST_ID = "main";
 const listDoc = doc(db, "shoppingLists", LIST_ID);
 const itemsRef = collection(db, "shoppingLists", LIST_ID, "items");
 
-/** Garante doc da lista e membership do usuário quando suas regras exigem "members". */
 async function ensureListAndMembership() {
   const uid = auth.currentUser?.uid;
   const snap = await getDoc(listDoc);
@@ -54,7 +52,9 @@ export const ShoppingListService = {
   async getAll(): Promise<ShoppingItem[]> {
     const q = query(itemsRef, orderBy("updatedAt", "desc"));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ShoppingItem));
+    return snapshot.docs.map(
+      (d) => ({ id: d.id, ...d.data() } as ShoppingItem)
+    );
   },
 
   async add(
@@ -68,6 +68,7 @@ export const ShoppingListService = {
       quantity,
       subtitle: extra?.subtitle ?? "",
       imageUrl: extra?.imageUrl ?? null,
+      checked: false,
       updatedAt: Timestamp.now(),
       createdAt: Timestamp.now(),
       createdBy: auth.currentUser?.uid ?? null,
