@@ -64,7 +64,7 @@ export default function ListScreen() {
         subtitle: subtitle,
         quantity: qty,
       });
-      setEditing(null);
+      setEditing(null); 
       load();
     } catch (e) {
       console.error("Erro ao editar item:", e);

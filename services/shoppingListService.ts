@@ -26,7 +26,7 @@ async function ensureListAndMembership() {
     await setDoc(
       listDoc,
       {
-        title: "Minha Lista",
+        title: "My List",
         members: uid ? { [uid]: true } : {},
         createdAt: Timestamp.now(),
       },

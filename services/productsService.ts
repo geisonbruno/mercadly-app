@@ -1,13 +1,15 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { auth, db } from "../config/firebase";
 
 export type Product = {
   id?: string;
@@ -17,14 +19,26 @@ export type Product = {
   createdBy?: string;
   createdAt?: any;
   category?: string;
+  emoji?: string | null;
+  isMine?: boolean;
 };
 
 const productsRef = collection(db, "products");
 
-// alguns itens 
+const myProductsRef = (uid: string) => collection(db, "users", uid, "products");
+
+// alguns itens
 const defaultProducts: Omit<Product, "id">[] = [
-  { name: "Arroz 5kg", description: "Arroz branco tipo 1", category: "Mercearia" },
-  { name: "Feijão 1kg", description: "Carioca ou preto", category: "Mercearia" },
+  {
+    name: "Arroz 5kg",
+    description: "Arroz branco tipo 1",
+    category: "Mercearia",
+  },
+  {
+    name: "Feijão 1kg",
+    description: "Carioca ou preto",
+    category: "Mercearia",
+  },
   { name: "Macarrão 500g", description: "Espaguete", category: "Mercearia" },
   { name: "Açúcar 1kg", description: "Refinado", category: "Mercearia" },
   { name: "Óleo 900ml", description: "Soja", category: "Mercearia" },
@@ -56,7 +70,7 @@ export const ProductsService = {
   // roda uma vez: se a coleção estiver vazia, popula com os defaults
   async seedDefaultsOnce() {
     const snap = await getDocs(productsRef);
-    if (!snap.empty) return; // já tem dados
+    if (!snap.empty) return;
 
     // opcional: usa IDs fixos pra evitar duplicar em reset de dev
     for (const p of defaultProducts) {
@@ -67,4 +81,41 @@ export const ProductsService = {
       });
     }
   },
+
+  /** Cria um produto pessoal em users/{uid}/products */
+  async createMine(input: { name: string; description?: string; emoji?: string | null }) {
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error("not-authenticated");
+
+    return addDoc(myProductsRef(uid), {
+      name: input.name,
+      description: input.description ?? "",
+      emoji: input.emoji ?? null,
+      // imageURL: null, // reservado para upload nativo futuro
+      createdBy: uid,
+      createdAt: serverTimestamp(),
+    });
+  },
+
+  /** Lista os produtos pessoais do usuário (mais recentes primeiro) */
+  async listMine(): Promise<Product[]> {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return [];
+    const q = query(myProductsRef(uid), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as any),
+      isMine: true,
+    }));
+  },
+
+  /** Remove um produto pessoal do usuário */
+  async deleteMine(id: string) {
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error("not-authenticated");
+    const pdoc = doc(db, "users", uid, "products", id);
+    return deleteDoc(pdoc);
+  },
+
 };
